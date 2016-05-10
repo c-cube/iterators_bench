@@ -109,34 +109,25 @@ module CPS = struct
       );
     })
 
-  type ('a, 'b) run =
-    | Start of 'a
-    | Run of 'b
-    | Stop
-
   let flat_map : type a b. (a -> b t) -> a t -> b t
   = fun f (CPS (st1, u1)) ->
     (* obtain next element of u1 *)
-    let rec iter_main st1 ~on_done ~on_skip ~on_yield =
-      u1.unfold st1
-        ~on_done
-        ~on_skip:(fun st1 -> iter_main st1 ~on_skip ~on_done ~on_yield)
-        ~on_yield:(fun st1 x1 ->
-          let sub2 = f x1 in
-          iter_sub st1 sub2 ~on_done ~on_skip ~on_yield
-        )
-    (* iterate on sub-sequence *)
-    and iter_sub st1 (CPS (sub_st2, sub2)) ~on_done ~on_skip ~on_yield =
-      sub2.unfold sub_st2
-        ~on_done:(fun () -> iter_main st1 ~on_done ~on_skip ~on_yield)
-        ~on_skip:(fun sub_st2 -> iter_sub st1 (CPS (sub_st2, sub2)) ~on_done ~on_skip ~on_yield)
-        ~on_yield:(fun sub_st2 x2 -> on_yield (st1, CPS (sub_st2, sub2)) x2)
+    let u = {
+      unfold=(fun (st1, CPS (sub_st2, sub2))
+          ~on_done ~on_skip ~on_yield ->
+        let done_ () =
+          u1.unfold st1
+            ~on_done
+            ~on_skip:(fun st1' -> on_skip (st1', empty))
+            ~on_yield:(fun st1' x1 -> on_skip (st1', f x1))
+        in
+        let skip sub_st2 = on_skip (st1, CPS (sub_st2, sub2)) in
+        let yield_ sub_st2 x2 = on_yield (st1, CPS (sub_st2,sub2)) x2 in
+        sub2.unfold sub_st2 ~on_done:done_ ~on_skip:skip ~on_yield:yield_
+      );
+    }
     in
-    CPS ((st1, empty), {
-      unfold=(fun (st1,sub2) ~on_done ~on_skip ~on_yield ->
-        iter_sub st1 sub2 ~on_done ~on_skip ~on_yield
-      )
-    })
+    CPS ((st1, empty), u)
 end
 
 let f_gen () =
