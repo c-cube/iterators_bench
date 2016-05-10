@@ -130,6 +130,59 @@ module CPS = struct
     CPS ((st1, empty), u)
 end
 
+module Fold = struct
+  type _ t =
+    | Fold : {fold: 'b. 's -> init:'b -> f:('b -> 'a -> 'b) -> 'b;
+              s: 's } -> 'a t
+
+  let map (Fold{fold;s}) ~f:m =
+    let fold s ~init ~f =
+      fold s ~init ~f:(fun b a -> f b (m a))
+    in
+    Fold{fold;s}
+
+  let filter (Fold{fold;s}) ~f:p =
+    let fold s ~init ~f =
+      fold s ~init ~f:(fun b a -> if p a then  f b a else b)
+    in
+    Fold{fold;s}
+
+  let unfold s unfolder =
+    let fold s ~init ~f =
+      let acc = ref init in
+      let st = ref s in
+      while begin
+        unfolder !st
+          ~on_done:false
+          ~on_skip:(fun s -> st := s; true)
+          ~on_yield:(fun s a ->
+            acc := f !acc a;
+            st:=s;
+            true)
+      end
+      do () done;
+      !acc
+    in
+    Fold{fold;s}
+
+  let fold (Fold{fold;s}) = fold s
+
+  let flat_map (Fold{fold=fold1;s=s1}) ~f:m =
+    let fold s2 ~init ~f =
+      fold1 s1
+        ~init
+        ~f:(fun acc x1 ->
+          let (Fold{fold=fold2;s=s2}) = m x1 in
+          fold2 s2 ~init:acc ~f)
+    in
+    Fold {fold; s=s1}
+
+  let (--) i j =
+    unfold i
+      (fun i ~on_done ~on_skip:_ ~on_yield ->
+         if i > j then on_done else on_yield (i+1) i)
+end
+
 let f_gen () =
   let open Gen in
   1 -- 100_000
@@ -170,6 +223,14 @@ let f_cps () =
   |> flat_map (fun x -> x -- (x+30))
   |> fold (+) 0
 
+let f_fold () =
+  let open Fold in
+  1 -- 100_000
+  |> map ~f:(fun x -> x +3)
+  |> filter ~f:(fun i -> i mod 2 = 0)
+  |> flat_map ~f:(fun x -> x -- (x+30))
+  |> fold ~init:0 ~f:(+)
+
 let f_list () =
   let open CCList in
   1 -- 100_000
@@ -201,6 +262,7 @@ let () =
     ; "g", Sys.opaque_identity f_g, ()
     ; "core.sequence", Sys.opaque_identity f_core, ()
     ; "cps", Sys.opaque_identity f_cps, ()
+    ; "fold", Sys.opaque_identity f_fold, ()
     ; "sequence", Sys.opaque_identity f_seq, ()
     ; "list", Sys.opaque_identity f_list, ()
     ]
