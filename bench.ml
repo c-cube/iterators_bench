@@ -44,6 +44,103 @@ module G = struct
     | Some x -> fold f (f acc x) g
 end
 
+module CPS = struct
+  type (+'a, 'state) unfold = {
+    unfold: 'r.
+      'state ->
+      on_done:(unit -> 'r) ->
+      on_skip:('state -> 'r) ->
+      on_yield:('state -> 'a -> 'r) ->
+      'r
+  }
+
+  type +_ t = CPS : 'state * ('a, 'state) unfold -> 'a t
+
+  let return x = CPS ((), {
+    unfold=(fun () ~on_done:_ ~on_skip:_ ~on_yield -> on_yield () x)
+  })
+
+  let map f (CPS (st, u)) = CPS (st, {
+    unfold=(fun st ~on_done ~on_skip ~on_yield ->
+      u.unfold
+        st
+        ~on_done
+        ~on_skip
+        ~on_yield:(fun st x -> on_yield st (f x))
+    );
+  })
+
+  let fold f acc (CPS (st,u)) =
+    let rec loop st acc =
+      u.unfold
+        st
+        ~on_done:(fun _ -> acc)
+        ~on_skip:(fun _ -> acc)
+        ~on_yield:(fun st' x -> let acc = f acc x in loop st' acc)
+    in
+    loop st acc
+
+  let to_list_rev iter = fold (fun acc x -> x::acc) [] iter
+
+  let of_list l = CPS (l, {
+    unfold=(fun l ~on_done ~on_skip:_ ~on_yield -> match l with
+      | [] -> on_done ()
+      | x :: tail -> on_yield tail x
+    );
+  })
+
+  let (--) i j = CPS (i, {
+    unfold=(fun i ~on_done ~on_skip:_ ~on_yield ->
+      if i>j then on_done ()
+      else on_yield (i+1) i
+    );
+  })
+
+  let filter f (CPS (st, u1)) =
+    let rec u2 = {
+      unfold=(fun st ~on_done ~on_skip ~on_yield ->
+        u1.unfold st ~on_done ~on_skip
+          ~on_yield:(fun st' x ->
+            if f x then on_yield st' x
+            else u2.unfold st' ~on_done ~on_skip ~on_yield
+          )
+      );
+    } in
+    CPS (st, u2)
+
+  type ('a, 'b) run =
+    | Start of 'a
+    | Run of 'b
+    | Stop
+
+  let flat_map : type a b. (a -> b t) -> a t -> b t
+  = fun f (CPS (st1, u1)) ->
+    (* obtain next element of u1 *)
+    let rec iter_main st1 ~on_done ~on_skip ~on_yield =
+      u1.unfold st1
+        ~on_done
+        ~on_skip:(fun st1 -> iter_main st1 ~on_skip ~on_done ~on_yield)
+        ~on_yield:(fun st1 x1 ->
+          let sub2 = f x1 in
+          iter_sub st1 sub2 ~on_done ~on_skip ~on_yield
+        )
+    (* iterate on sub-sequence *)
+    and iter_sub st1 (CPS (sub_st2, sub2)) ~on_done ~on_skip ~on_yield =
+      sub2.unfold sub_st2
+        ~on_done:(fun () -> iter_main st1 ~on_done ~on_skip ~on_yield)
+        ~on_skip:(fun sub_st2 -> iter_sub st1 (CPS (sub_st2, sub2)) ~on_done ~on_skip ~on_yield)
+        ~on_yield:(fun sub_st2 x2 -> on_yield (Run (st1, CPS (sub_st2, sub2))) x2)
+    in
+    CPS (Start st1, {
+      unfold=(fun st1 ~on_done ~on_skip ~on_yield -> match st1 with
+        | Stop -> on_done ()
+        | Start st1 -> iter_main st1 ~on_done ~on_skip ~on_yield
+        | Run (st1, sub2) ->
+          iter_sub st1 sub2 ~on_done ~on_skip ~on_yield
+      );
+    })
+end
+
 let f_gen () =
   let open Gen in
   1 -- 100_000
@@ -76,6 +173,14 @@ let f_seq () =
   |> flat_map (fun x -> x -- (x+30))
   |> fold (+) 0
 
+let f_cps () =
+  let open CPS in
+  1 -- 100_000
+  |> map (fun x -> x+1)
+  |> filter (fun x -> x mod 2 = 0)
+  |> flat_map (fun x -> x -- (x+30))
+  |> fold (+) 0
+
 let f_core () =
   let open Core_kernel.Sequence in
   range ~start:`inclusive ~stop:`inclusive 1 100_000
@@ -98,6 +203,7 @@ let () =
     ; "gen_no_optim", Sys.opaque_identity f_gen_noptim, ()
     ; "g", Sys.opaque_identity f_g, ()
     ; "core.sequence", Sys.opaque_identity f_core, ()
+    ; "cps", Sys.opaque_identity f_cps, ()
     ; "sequence", Sys.opaque_identity f_seq, ()
     ]
   in
