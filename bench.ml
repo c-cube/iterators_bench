@@ -77,7 +77,7 @@ module CPS = struct
       u.unfold
         st
         ~on_done:(fun _ -> acc)
-        ~on_skip:(fun _ -> acc)
+        ~on_skip:(fun st' -> loop st' acc)
         ~on_yield:(fun st' x -> let acc = f acc x in loop st' acc)
     in
     loop st acc
@@ -99,16 +99,15 @@ module CPS = struct
   })
 
   let filter f (CPS (st, u1)) =
-    let rec u2 = {
+    CPS (st, {
       unfold=(fun st ~on_done ~on_skip ~on_yield ->
         u1.unfold st ~on_done ~on_skip
           ~on_yield:(fun st' x ->
             if f x then on_yield st' x
-            else u2.unfold st' ~on_done ~on_skip ~on_yield
+            else on_skip st'
           )
       );
-    } in
-    CPS (st, u2)
+    })
 
   type ('a, 'b) run =
     | Start of 'a
