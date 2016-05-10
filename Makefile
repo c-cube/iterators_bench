@@ -1,9 +1,11 @@
 
 DEPS = sequence gen core_kernel benchmark
 
-OPTS = -O3 -unbox-closures
+OPTS = -O3 -unbox-closures -unbox-closures-factor 20
 
-build: deps
+all: deps build
+
+build:
 	ocamlfind opt $(OPTS) $(addprefix -package , $(DEPS)) -linkpkg bench.ml -o bench.native
 
 deps:
