@@ -130,6 +130,94 @@ module CPS = struct
     CPS ((st1, empty), u)
 end
 
+module CPS2 = struct
+  type +'a t =
+    | CPS : { state : 's
+            ; unfold : 'r.
+                         's
+                -> on_done:(unit -> 'r)
+                -> on_skip:('s -> 'r)
+                -> on_yield:('s -> 'a -> 'r)
+                -> 'r
+            } -> 'a t
+
+  let empty =
+    CPS { state = (); unfold=(fun () ~on_done ~on_skip:_ ~on_yield:_ -> on_done ()) }
+
+  let return x =
+    CPS { state = ();
+          unfold=(fun () ~on_done:_ ~on_skip:_ ~on_yield -> on_yield () x)
+        }
+
+  let map f (CPS { state = st; unfold = u }) =
+    CPS { state = st;
+          unfold=(fun st ~on_done ~on_skip ~on_yield ->
+            u
+              st
+              ~on_done
+              ~on_skip
+              ~on_yield:(fun st x -> on_yield st (f x))
+          );
+        }
+
+  let fold f acc (CPS { state = st; unfold = u }) =
+    let rec loop st acc =
+      u
+        st
+        ~on_done:(fun _ -> acc)
+        ~on_skip:(fun st' -> loop st' acc)
+        ~on_yield:(fun st' x -> let acc = f acc x in loop st' acc)
+    in
+    loop st acc
+
+  let to_list_rev iter = fold (fun acc x -> x::acc) [] iter
+
+  let of_list l = CPS { state = l;
+                        unfold=(fun l ~on_done ~on_skip:_ ~on_yield -> match l with
+                          | [] -> on_done ()
+                          | x :: tail -> on_yield tail x
+                        );
+                      }
+
+  let (--) i j = CPS { state = i;
+                       unfold=(fun i ~on_done ~on_skip:_ ~on_yield ->
+                         if i>j then on_done ()
+                         else on_yield (i+1) i
+                       );
+                     }
+
+  let filter f (CPS { state = st; unfold = u1 }) =
+    CPS { state = st;
+          unfold=(fun st ~on_done ~on_skip ~on_yield ->
+            u1 st ~on_done ~on_skip
+              ~on_yield:(fun st' x ->
+                if f x then on_yield st' x
+                else on_skip st'
+              )
+          );
+        }
+
+  let flat_map : type a b. (a -> b t) -> a t -> b t
+    = fun f (CPS { state = st1; unfold = u1 }) ->
+      (* obtain next element of u1 *)
+      let u = (fun (st1, CPS { state = sub_st2; unfold = sub2 })
+                ~on_done ~on_skip ~on_yield ->
+                let done_ () =
+                  u1 st1
+                    ~on_done
+                    ~on_skip:(fun st1' -> on_skip (st1', empty))
+                    ~on_yield:(fun st1' x1 -> on_skip (st1', f x1))
+                in
+                let skip sub_st2 = on_skip (st1, CPS { state = sub_st2; unfold = sub2 }) in
+                let yield_ sub_st2 x2 =
+                  on_yield (st1, CPS { state = sub_st2; unfold = sub2 }) x2
+                in
+                sub2 sub_st2 ~on_done:done_ ~on_skip:skip ~on_yield:yield_
+              );
+      in
+      CPS { state = (st1, empty); unfold = u }
+end
+
 module Fold = struct
   type _ t =
     | Fold : {fold: 'b. 's -> init:'b -> f:('b -> 'a -> 'b) -> 'b;
@@ -222,6 +310,14 @@ let f_cps () =
   |> filter (fun x -> x mod 2 = 0)
   |> flat_map (fun x -> x -- (x+30))
   |> fold (+) 0
+  
+let f_cps2 () =
+  let open CPS2 in
+  1 -- 100_000
+  |> map (fun x -> x+1)
+  |> filter (fun x -> x mod 2 = 0)
+  |> flat_map (fun x -> x -- (x+30))
+  |> fold (+) 0
 
 let f_fold () =
   let open Fold in
@@ -262,6 +358,7 @@ let () =
     ; "g", Sys.opaque_identity f_g, ()
     ; "core.sequence", Sys.opaque_identity f_core, ()
     ; "cps", Sys.opaque_identity f_cps, ()
+    ; "cps2", Sys.opaque_identity f_cps2, ()
     ; "fold", Sys.opaque_identity f_fold, ()
     ; "sequence", Sys.opaque_identity f_seq, ()
     ; "list", Sys.opaque_identity f_list, ()
