@@ -4,4 +4,5 @@ PKG gen
 PKG sequence
 PKG core_kernel
 PKG benchmark
+PKG containers
 FLG -w +a-4-44

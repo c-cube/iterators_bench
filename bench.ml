@@ -131,15 +131,12 @@ module CPS = struct
       sub2.unfold sub_st2
         ~on_done:(fun () -> iter_main st1 ~on_done ~on_skip ~on_yield)
         ~on_skip:(fun sub_st2 -> iter_sub st1 (CPS (sub_st2, sub2)) ~on_done ~on_skip ~on_yield)
-        ~on_yield:(fun sub_st2 x2 -> on_yield (Run (st1, CPS (sub_st2, sub2))) x2)
+        ~on_yield:(fun sub_st2 x2 -> on_yield (st1, CPS (sub_st2, sub2)) x2)
     in
-    CPS (Start st1, {
-      unfold=(fun st1 ~on_done ~on_skip ~on_yield -> match st1 with
-        | Stop -> on_done ()
-        | Start st1 -> iter_main st1 ~on_done ~on_skip ~on_yield
-        | Run (st1, sub2) ->
-          iter_sub st1 sub2 ~on_done ~on_skip ~on_yield
-      );
+    CPS ((st1, empty), {
+      unfold=(fun (st1,sub2) ~on_done ~on_skip ~on_yield ->
+        iter_sub st1 sub2 ~on_done ~on_skip ~on_yield
+      )
     })
 end
 
@@ -183,6 +180,14 @@ let f_cps () =
   |> flat_map (fun x -> x -- (x+30))
   |> fold (+) 0
 
+let f_list () =
+  let open CCList in
+  1 -- 100_000
+  |> map (fun x -> x+1)
+  |> filter (fun x -> x mod 2 = 0)
+  |> flat_map (fun x -> x -- (x+30))
+  |> List.fold_left (+) 0
+
 let f_core () =
   let open Core_kernel.Sequence in
   range ~start:`inclusive ~stop:`inclusive 1 100_000
@@ -207,6 +212,7 @@ let () =
     ; "core.sequence", Sys.opaque_identity f_core, ()
     ; "cps", Sys.opaque_identity f_cps, ()
     ; "sequence", Sys.opaque_identity f_seq, ()
+    ; "list", Sys.opaque_identity f_list, ()
     ]
   in
   Benchmark.tabulate res
