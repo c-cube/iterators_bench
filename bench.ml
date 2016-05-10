@@ -56,6 +56,8 @@ module CPS = struct
 
   type +_ t = CPS : 'state * ('a, 'state) unfold -> 'a t
 
+  let empty = CPS ((), {unfold=(fun () ~on_done ~on_skip:_ ~on_yield:_ -> on_done ())})
+
   let return x = CPS ((), {
     unfold=(fun () ~on_done:_ ~on_skip:_ ~on_yield -> on_yield () x)
   })
