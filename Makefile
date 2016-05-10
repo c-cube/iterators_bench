@@ -1,8 +1,10 @@
 
 DEPS = sequence gen core_kernel benchmark
 
+OPTS = -O3 -unbox-closures
+
 build: deps
-	ocamlfind opt -O3 $(addprefix -package , $(DEPS)) -linkpkg bench.ml -o bench.native
+	ocamlfind opt $(OPTS) $(addprefix -package , $(DEPS)) -linkpkg bench.ml -o bench.native
 
 deps:
 	@echo install deps
