@@ -1,0 +1,7 @@
+S .
+B _build/
+PKG gen
+PKG sequence
+PKG core_kernel
+PKG benchmark
+FLG -w +a-4-44
