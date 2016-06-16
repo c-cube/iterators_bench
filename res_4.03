@@ -1,35 +1,35 @@
 Throughputs for "gen", "gen_no_optim", "g", "core.sequence", "cps", "cps2", "fold", "sequence", "list", "lazy_list", "ulist" each running 2 times for at least 3 CPU seconds:
-          gen:  3.17 WALL ( 3.16 usr +  0.00 sys =  3.16 CPU) @ 92.94/s (n=294)
-                3.16 WALL ( 3.16 usr +  0.00 sys =  3.16 CPU) @ 93.04/s (n=294)
- gen_no_optim:  3.16 WALL ( 3.15 usr +  0.01 sys =  3.16 CPU) @ 93.14/s (n=294)
-                3.17 WALL ( 3.16 usr +  0.00 sys =  3.16 CPU) @ 92.94/s (n=294)
-            g:  3.20 WALL ( 3.20 usr +  0.00 sys =  3.20 CPU) @ 83.84/s (n=268)
-                3.19 WALL ( 3.18 usr +  0.00 sys =  3.19 CPU) @ 84.10/s (n=268)
-core.sequence:  3.42 WALL ( 3.42 usr +  0.00 sys =  3.42 CPU) @ 62.93/s (n=215)
-                3.42 WALL ( 3.42 usr +  0.00 sys =  3.42 CPU) @ 62.87/s (n=215)
-          cps:  3.52 WALL ( 3.52 usr +  0.00 sys =  3.52 CPU) @ 27.01/s (n=95)
-                3.53 WALL ( 3.52 usr +  0.00 sys =  3.52 CPU) @ 26.96/s (n=95)
-         cps2:  3.51 WALL ( 3.51 usr +  0.00 sys =  3.51 CPU) @ 27.32/s (n=96)
-                3.53 WALL ( 3.53 usr +  0.00 sys =  3.53 CPU) @ 27.22/s (n=96)
-         fold:  3.14 WALL ( 3.14 usr +  0.00 sys =  3.14 CPU) @ 58.02/s (n=182)
-                3.14 WALL ( 3.14 usr +  0.00 sys =  3.14 CPU) @ 57.96/s (n=182)
-     sequence:  3.13 WALL ( 3.13 usr +  0.00 sys =  3.13 CPU) @ 115.02/s (n=360)
-                3.14 WALL ( 3.13 usr +  0.01 sys =  3.13 CPU) @ 114.89/s (n=360)
-         list:  3.16 WALL ( 3.16 usr +  0.00 sys =  3.16 CPU) @  5.38/s (n=17)
-                3.03 WALL ( 3.03 usr +  0.00 sys =  3.03 CPU) @  5.29/s (n=16)
-    lazy_list:  3.09 WALL ( 3.09 usr +  0.00 sys =  3.09 CPU) @  5.83/s (n=18)
-                3.09 WALL ( 3.09 usr +  0.00 sys =  3.09 CPU) @  5.83/s (n=18)
-        ulist:  3.15 WALL ( 3.14 usr +  0.00 sys =  3.15 CPU) @ 53.71/s (n=169)
-                3.15 WALL ( 3.14 usr +  0.00 sys =  3.14 CPU) @ 53.76/s (n=169)
-                Rate        list lazy_list  cps cps2 ulist fold core.sequence    g  gen gen_no_optim sequence
-         list 5.33+-0.04/s    --       -8% -80% -80%  -90% -91%          -92% -94% -94%         -94%     -95%
-    lazy_list 5.83+-0.00/s    9%        -- -78% -79%  -89% -90%          -91% -93% -94%         -94%     -95%
-          cps 27.0+- 0.0/s  406%      363%   --  -1%  -50% -53%          -57% -68% -71%         -71%     -77%
-         cps2 27.3+- 0.0/s  411%      368%   1%   --  -49% -53%          -57% -68% -71%         -71%     -76%
-        ulist 53.7+- 0.0/s  908%      822%  99%  97%    --  -7%          -15% -36% -42%         -42%     -53%
-         fold 58.0+- 0.0/s  987%      896% 115% 113%    8%   --           -8% -31% -38%         -38%     -50%
-core.sequence 62.9+- 0.0/s 1079%      980% 133% 131%   17%   8%            -- -25% -32%         -32%     -45%
-            g 84.0+- 0.1/s 1475%     1341% 211% 208%   56%  45%           34%   -- -10%         -10%     -27%
-          gen 93.0+- 0.0/s 1644%     1496% 245% 241%   73%  60%           48%  11%   --        [-0%]     -19%
- gen_no_optim 93.0+- 0.1/s 1645%     1497% 245% 241%   73%  60%           48%  11% [0%]           --     -19%
-     sequence  115+-   0/s 2056%     1873% 326% 321%  114%  98%           83%  37%  24%          24%       --
+          gen:  3.15 WALL ( 3.15 usr +  0.00 sys =  3.15 CPU) @ 95.56/s (n=301)
+                3.15 WALL ( 3.15 usr +  0.00 sys =  3.15 CPU) @ 95.56/s (n=301)
+ gen_no_optim:  3.15 WALL ( 3.15 usr +  0.00 sys =  3.15 CPU) @ 95.56/s (n=301)
+                3.16 WALL ( 3.15 usr +  0.00 sys =  3.15 CPU) @ 95.45/s (n=301)
+            g:  3.14 WALL ( 3.13 usr +  0.00 sys =  3.13 CPU) @ 83.30/s (n=261)
+                3.14 WALL ( 3.13 usr +  0.00 sys =  3.13 CPU) @ 83.30/s (n=261)
+core.sequence:  3.16 WALL ( 3.15 usr +  0.00 sys =  3.15 CPU) @ 64.38/s (n=203)
+                3.15 WALL ( 3.14 usr +  0.00 sys =  3.14 CPU) @ 64.58/s (n=203)
+          cps:  3.50 WALL ( 3.49 usr +  0.00 sys =  3.49 CPU) @ 27.77/s (n=97)
+                3.49 WALL ( 3.49 usr +  0.00 sys =  3.49 CPU) @ 27.79/s (n=97)
+         cps2:  3.17 WALL ( 3.16 usr +  0.00 sys =  3.16 CPU) @ 28.13/s (n=89)
+                3.19 WALL ( 3.19 usr +  0.00 sys =  3.19 CPU) @ 27.90/s (n=89)
+         fold:  3.12 WALL ( 3.11 usr +  0.00 sys =  3.11 CPU) @ 185.01/s (n=576)
+                3.11 WALL ( 3.11 usr +  0.00 sys =  3.11 CPU) @ 185.21/s (n=576)
+     sequence:  3.18 WALL ( 3.17 usr +  0.00 sys =  3.17 CPU) @ 118.17/s (n=375)
+                3.19 WALL ( 3.18 usr +  0.01 sys =  3.18 CPU) @ 117.80/s (n=375)
+         list:  3.16 WALL ( 3.07 usr +  0.08 sys =  3.15 CPU) @  5.40/s (n=17)
+                3.17 WALL ( 3.08 usr +  0.08 sys =  3.16 CPU) @  5.37/s (n=17)
+    lazy_list:  3.15 WALL ( 3.14 usr +  0.00 sys =  3.14 CPU) @  6.05/s (n=19)
+                3.15 WALL ( 3.15 usr +  0.00 sys =  3.15 CPU) @  6.03/s (n=19)
+        ulist:  3.16 WALL ( 3.15 usr +  0.00 sys =  3.15 CPU) @ 55.24/s (n=174)
+                3.15 WALL ( 3.14 usr +  0.00 sys =  3.15 CPU) @ 55.30/s (n=174)
+                Rate        list lazy_list  cps  cps2 ulist core.sequence    g gen_no_optim   gen sequence fold
+         list 5.39+-0.01/s    --      -11% -81%  -81%  -90%          -92% -94%         -94%  -94%     -95% -97%
+    lazy_list 6.04+-0.01/s   12%        -- -78%  -78%  -89%          -91% -93%         -94%  -94%     -95% -97%
+          cps 27.8+- 0.0/s  416%      360%   -- [-1%]  -50%          -57% -67%         -71%  -71%     -76% -85%
+         cps2 28.0+- 0.1/s  420%      364% [1%]    --  -49%          -57% -66%         -71%  -71%     -76% -85%
+        ulist 55.3+- 0.0/s  926%      815%  99%   97%    --          -14% -34%         -42%  -42%     -53% -70%
+core.sequence 64.5+- 0.1/s 1097%      967% 132%  130%   17%            -- -23%         -32%  -33%     -45% -65%
+            g 83.3+- 0.0/s 1447%     1279% 200%  197%   51%           29%   --         -13%  -13%     -29% -55%
+ gen_no_optim 95.5+- 0.0/s 1673%     1481% 244%  241%   73%           48%  15%           -- [-0%]     -19% -48%
+          gen 95.6+- 0.0/s 1674%     1482% 244%  241%   73%           48%  15%         [0%]    --     -19% -48%
+     sequence  118+-   0/s 2091%     1853% 325%  321%  113%           83%  42%          24%   23%       -- -36%
+         fold  185+-   0/s 3337%     2964% 566%  561%  235%          187% 122%          94%   94%      57%   --
