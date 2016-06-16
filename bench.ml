@@ -235,28 +235,10 @@ module Fold = struct
     in
     Fold{fold;s}
 
-  let unfold s unfolder =
-    let fold s ~init ~f =
-      let acc = ref init in
-      let st = ref s in
-      while begin
-        unfolder !st
-          ~on_done:false
-          ~on_skip:(fun s -> st := s; true)
-          ~on_yield:(fun s a ->
-            acc := f !acc a;
-            st:=s;
-            true)
-      end
-      do () done;
-      !acc
-    in
-    Fold{fold;s}
-
   let fold (Fold{fold;s}) = fold s
 
   let flat_map (Fold{fold=fold1;s=s1}) ~f:m =
-    let fold s2 ~init ~f =
+    let fold _s2 ~init ~f =
       fold1 s1
         ~init
         ~f:(fun acc x1 ->
@@ -266,9 +248,11 @@ module Fold = struct
     Fold {fold; s=s1}
 
   let (--) i j =
-    unfold i
-      (fun i ~on_done ~on_skip:_ ~on_yield ->
-         if i > j then on_done else on_yield (i+1) i)
+    let rec fold s ~init ~f =
+      if s>j then init
+      else fold (s+1) ~init:(f init s) ~f
+    in
+    Fold {fold; s=i}
 end
 
 module LList = struct
@@ -393,7 +377,7 @@ let f_cps () =
   |> filter (fun x -> x mod 2 = 0)
   |> flat_map (fun x -> x -- (x+30))
   |> fold (+) 0
-  
+
 let f_cps2 () =
   let open CPS2 in
   1 -- 100_000
@@ -405,7 +389,7 @@ let f_cps2 () =
 let f_fold () =
   let open Fold in
   1 -- 100_000
-  |> map ~f:(fun x -> x +3)
+  |> map ~f:(fun x -> x +1)
   |> filter ~f:(fun i -> i mod 2 = 0)
   |> flat_map ~f:(fun x -> x -- (x+30))
   |> fold ~init:0 ~f:(+)
@@ -447,6 +431,7 @@ let () =
   assert (f_g () = f_gen());
   assert (f_seq () = f_gen());
   assert (f_core () = f_gen());
+  assert (f_fold () = f_gen());
   ()
 
 let () =
