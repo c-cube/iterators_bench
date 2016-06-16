@@ -1,0 +1,29 @@
+Throughputs for "gen", "gen_no_optim", "g", "core.sequence", "cps", "cps2", "fold", "sequence", "list" each running 2 times for at least 3 CPU seconds:
+          gen:  3.19 WALL ( 3.18 usr +  0.01 sys =  3.18 CPU) @ 94.55/s (n=301)
+                3.18 WALL ( 3.15 usr +  0.02 sys =  3.18 CPU) @ 94.75/s (n=301)
+ gen_no_optim:  3.14 WALL ( 3.14 usr +  0.00 sys =  3.14 CPU) @ 93.95/s (n=295)
+                3.12 WALL ( 3.11 usr +  0.01 sys =  3.12 CPU) @ 94.55/s (n=295)
+            g:  3.14 WALL ( 3.13 usr +  0.00 sys =  3.13 CPU) @ 82.34/s (n=258)
+                3.14 WALL ( 3.13 usr +  0.00 sys =  3.13 CPU) @ 82.34/s (n=258)
+core.sequence:  3.17 WALL ( 3.17 usr +  0.00 sys =  3.17 CPU) @ 63.97/s (n=203)
+                3.17 WALL ( 3.16 usr +  0.00 sys =  3.16 CPU) @ 64.17/s (n=203)
+          cps:  3.50 WALL ( 3.49 usr +  0.00 sys =  3.49 CPU) @ 27.19/s (n=95)
+                3.47 WALL ( 3.47 usr +  0.00 sys =  3.47 CPU) @ 27.38/s (n=95)
+         cps2:  3.50 WALL ( 3.50 usr +  0.00 sys =  3.50 CPU) @ 27.74/s (n=97)
+                3.48 WALL ( 3.48 usr +  0.00 sys =  3.48 CPU) @ 27.90/s (n=97)
+         fold:  3.17 WALL ( 3.16 usr +  0.00 sys =  3.16 CPU) @ 60.38/s (n=191)
+                3.17 WALL ( 3.17 usr +  0.00 sys =  3.17 CPU) @ 60.32/s (n=191)
+     sequence:  3.17 WALL ( 3.16 usr +  0.00 sys =  3.17 CPU) @ 117.16/s (n=371)
+                3.19 WALL ( 3.19 usr +  0.00 sys =  3.19 CPU) @ 116.42/s (n=371)
+         list:  3.14 WALL ( 3.10 usr +  0.03 sys =  3.13 CPU) @  5.43/s (n=17)
+                3.17 WALL ( 3.14 usr +  0.03 sys =  3.17 CPU) @  5.36/s (n=17)
+                Rate        list  cps cps2 fold core.sequence    g gen_no_optim   gen sequence
+         list 5.40+-0.03/s    -- -80% -81% -91%          -92% -93%         -94%  -94%     -95%
+          cps 27.3+- 0.1/s  406%   --  -2% -55%          -57% -67%         -71%  -71%     -77%
+         cps2 27.8+- 0.1/s  415%   2%   -- -54%          -57% -66%         -70%  -71%     -76%
+         fold 60.3+- 0.0/s 1018% 121% 117%   --           -6% -27%         -36%  -36%     -48%
+core.sequence 64.1+- 0.1/s 1087% 135% 130%   6%            -- -22%         -32%  -32%     -45%
+            g 82.3+- 0.0/s 1426% 202% 196%  36%           29%   --         -13%  -13%     -29%
+ gen_no_optim 94.3+- 0.3/s 1646% 245% 239%  56%           47%  14%           -- [-0%]     -19%
+          gen 94.7+- 0.1/s 1654% 247% 240%  57%           48%  15%         [0%]    --     -19%
+     sequence  117+-   0/s 2064% 328% 320%  94%           82%  42%          24%   23%       --
