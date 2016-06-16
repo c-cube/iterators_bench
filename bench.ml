@@ -271,6 +271,89 @@ module Fold = struct
          if i > j then on_done else on_yield (i+1) i)
 end
 
+module LList = struct
+  type 'a t = 'a node lazy_t
+  and 'a node = Nil | Cons of 'a * 'a t
+
+  let rec (--) i j =
+    lazy (
+      if i>j then  Nil
+      else Cons (i, i+1 -- j)
+    )
+
+  let rec map f l =
+    lazy (match l with
+      | lazy Nil -> Nil
+      | lazy (Cons (x,tail)) -> Cons (f x, map f tail)
+    )
+
+  let filter f l =
+    let rec aux f l = match l with
+      | lazy Nil -> Nil
+      | lazy (Cons (x,tl)) when f x -> Cons (x, lazy (aux f tl))
+      | lazy (Cons (_, tl)) ->  aux f tl
+    in
+    lazy (aux f l)
+
+  let rec append a b =
+    lazy (
+      match a with
+        | lazy Nil -> Lazy.force b
+        | lazy (Cons (x,tl)) -> Cons (x, append tl b)
+    )
+
+  let rec flat_map f l =
+    lazy (
+      match l with
+        | lazy Nil -> Nil
+        | lazy (Cons (x,tl)) ->
+          let res = append (f x) (flat_map f tl) in
+          Lazy.force res
+    )
+
+  let rec fold f acc = function
+    | lazy Nil -> acc
+    | lazy (Cons (x,tl)) -> fold f (f acc x) tl
+end
+
+module UList = struct
+  type 'a t = unit -> 'a node
+  and 'a node = Nil | Cons of 'a * 'a t
+
+  let rec (--) i j () =
+    if i>j then Nil
+    else Cons (i, i+1 -- j)
+
+  let rec map f l () =
+    match l () with
+      | Nil -> Nil
+      | Cons (x,tail) -> Cons (f x, map f tail)
+
+  let filter f l =
+    let rec aux f l () = match l () with
+      | Nil -> Nil
+      | Cons (x,tl) when f x -> Cons (x, aux f tl)
+      | Cons (_, tl) -> aux f tl ()
+    in
+    aux f l
+
+  let rec append a b () =
+    match a () with
+      | Nil -> b ()
+      | Cons (x,tl) -> Cons (x, append tl b)
+
+  let rec flat_map f l () =
+    match l() with
+      | Nil -> Nil
+      | Cons (x,tl) ->
+        let res = append (f x) (flat_map f tl) in
+        res ()
+
+  let rec fold f acc l = match l() with
+    | Nil -> acc
+    | Cons (x,tl) -> fold f (f acc x) tl
+end
+
 let f_gen () =
   let open Gen in
   1 -- 100_000
@@ -335,6 +418,22 @@ let f_list () =
   |> flat_map (fun x -> x -- (x+30))
   |> List.fold_left (+) 0
 
+let f_llist () =
+  let open LList in
+  1 -- 100_000
+  |> map (fun x -> x+1)
+  |> filter (fun x -> x mod 2 = 0)
+  |> flat_map (fun x -> x -- (x+30))
+  |> fold (+) 0
+
+let f_ulist () =
+  let open UList in
+  1 -- 100_000
+  |> map (fun x -> x+1)
+  |> filter (fun x -> x mod 2 = 0)
+  |> flat_map (fun x -> x -- (x+30))
+  |> fold (+) 0
+
 let f_core () =
   let open Core_kernel.Sequence in
   range ~start:`inclusive ~stop:`inclusive 1 100_000
@@ -362,6 +461,8 @@ let () =
     ; "fold", Sys.opaque_identity f_fold, ()
     ; "sequence", Sys.opaque_identity f_seq, ()
     ; "list", Sys.opaque_identity f_list, ()
+    ; "lazy_list", Sys.opaque_identity f_llist, ()
+    ; "ulist", Sys.opaque_identity f_ulist, ()
     ]
   in
   Benchmark.tabulate res
