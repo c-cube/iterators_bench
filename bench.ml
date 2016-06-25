@@ -338,6 +338,7 @@ module UList = struct
     | Cons (x,tl) -> fold f (f acc x) tl
 end
 
+(* the "gen" library *)
 let f_gen () =
   let open Gen in
   1 -- 100_000
@@ -362,6 +363,7 @@ let f_g () =
   |> flat_map (fun x -> x -- (x+30))
   |> fold (+) 0
 
+(* sequence library *)
 let f_seq () =
   let open Sequence in
   1 -- 100_000
@@ -418,6 +420,7 @@ let f_ulist () =
   |> flat_map (fun x -> x -- (x+30))
   |> fold (+) 0
 
+(* Core library *)
 let f_core () =
   let open Core_kernel.Sequence in
   range ~start:`inclusive ~stop:`inclusive 1 100_000
