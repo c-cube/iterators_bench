@@ -44,6 +44,52 @@ module G = struct
     | Some x -> fold f (f acc x) g
 end
 
+module G_exn = struct
+  exception End
+
+  type 'a t = unit -> 'a
+  (** @raise End when gen is exhausted *)
+
+  let (--) i j =
+    let r = ref i in
+    fun () ->
+      if !r > j then raise End
+      else (let x = !r in incr r; x)
+
+  let map f g =
+    fun () ->
+      let x = g() in
+      f x
+
+  let rec filter f g () =
+    let x = g() in
+    if f x then x else filter f g ()
+
+  type 'a state =
+    | Start
+    | Cur of 'a
+    | Stop
+
+  let flat_map f g =
+    let state = ref Start in
+    let rec aux () = match !state with
+      | Start -> next_gen(); aux ()
+      | Stop -> raise End
+      | Cur g' ->
+        match g'() with
+          | x -> x
+          | exception End -> next_gen(); aux ()
+    and next_gen() = match g() with
+      | x -> state := Cur (f x)
+      | exception e -> state := Stop; raise e
+    in
+    aux
+
+  let rec fold f acc g = match g () with
+    | x -> fold f (f acc x) g
+    | exception End -> acc
+end
+
 module CPS = struct
   type (+'a, 'state) unfold = {
     unfold: 'r.
@@ -363,6 +409,14 @@ let f_g () =
   |> flat_map (fun x -> x -- (x+30))
   |> fold (+) 0
 
+let f_g_exn () =
+  let open G_exn in
+  1 -- 100_000
+  |> map (fun x -> x+1)
+  |> filter (fun x -> x mod 2 = 0)
+  |> flat_map (fun x -> x -- (x+30))
+  |> fold (+) 0
+
 (* sequence library *)
 let f_seq () =
   let open Sequence in
@@ -432,6 +486,7 @@ let f_core () =
 let () =
   assert (f_gen_noptim () = f_gen());
   assert (f_g () = f_gen());
+  assert (f_g_exn () = f_gen());
   assert (f_seq () = f_gen());
   assert (f_core () = f_gen());
   assert (f_fold () = f_gen());
@@ -443,6 +498,7 @@ let () =
     [ "gen", Sys.opaque_identity f_gen, ()
     ; "gen_no_optim", Sys.opaque_identity f_gen_noptim, ()
     ; "g", Sys.opaque_identity f_g, ()
+    ; "g_exn", Sys.opaque_identity f_g_exn, ()
     ; "core.sequence", Sys.opaque_identity f_core, ()
     ; "cps", Sys.opaque_identity f_cps, ()
     ; "cps2", Sys.opaque_identity f_cps2, ()
