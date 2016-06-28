@@ -384,6 +384,65 @@ module UList = struct
     | Cons (x,tl) -> fold f (f acc x) tl
 end
 
+module UnCons = struct
+  type +'a t = T : {state: 'st; next: 'st -> ('a * 'st) option} -> 'a t
+
+  let empty = T { state=(); next=(fun _ -> None) }
+
+  let (--) i j =
+    let next i = if i>j then None else Some (i, i+1) in
+    T {state=i; next}
+
+  let map f (T {state; next}) =
+    let next' s = match next s with
+      | None -> None
+      | Some (x, s') -> Some (f x, s')
+    in
+    T {state; next=next'}
+
+  let filter f (T {state; next}) =
+    let rec next' s = match next s with
+      | None -> None
+      | Some (x, _) as res when f x -> res
+      | Some (_, s') -> next' s'
+    in
+    T {state; next=next'}
+
+  type ('a, 'b, 'top_st) flat_map_state =
+    FMS :
+      { top: 'top_st;
+        sub: 'sub_st;
+        sub_next: 'sub_st -> ('b * 'sub_st) option
+      } -> ('a, 'b, 'top_st) flat_map_state
+
+  let flat_map f (T {state; next}) =
+    let rec next' (FMS { top; sub; sub_next}) =
+      match sub_next sub with
+        | None ->
+          begin match next top with
+            | None -> None
+            | Some (x, top') ->
+              let T{next=sub_next; state=sub} = f x in
+              next' (FMS { top=top'; sub; sub_next; })
+          end
+        | Some (x, sub') ->
+          Some (x, FMS {top; sub=sub'; sub_next})
+    in
+    T {
+      state=FMS {top=state; sub=(); sub_next=(fun _ -> None) };
+      next=next';
+    }
+
+  let fold f acc (T{state; next}) =
+    let rec aux f acc state = match next state with
+      | None -> acc
+      | Some (x, state') ->
+        let acc = f acc x in
+        aux f acc state'
+    in
+    aux f acc state
+end
+
 (* the "gen" library *)
 let f_gen () =
   let open Gen in
@@ -474,6 +533,14 @@ let f_ulist () =
   |> flat_map (fun x -> x -- (x+30))
   |> fold (+) 0
 
+let f_uncons () =
+  let open UnCons in
+  1 -- 100_000
+  |> map (fun x -> x+1)
+  |> filter (fun x -> x mod 2 = 0)
+  |> flat_map (fun x -> x -- (x+30))
+  |> fold (+) 0
+
 (* Core library *)
 let f_core () =
   let open Core_kernel.Sequence in
@@ -490,6 +557,7 @@ let () =
   assert (f_seq () = f_gen());
   assert (f_core () = f_gen());
   assert (f_fold () = f_gen());
+  assert (f_uncons () = f_gen());
   ()
 
 let () =
@@ -507,6 +575,7 @@ let () =
     ; "list", Sys.opaque_identity f_list, ()
     ; "lazy_list", Sys.opaque_identity f_llist, ()
     ; "ulist", Sys.opaque_identity f_ulist, ()
+    ; "uncons", Sys.opaque_identity f_uncons, ()
     ]
   in
   Benchmark.tabulate res
