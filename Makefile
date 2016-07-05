@@ -10,7 +10,7 @@ build:
 
 deps:
 	@echo install deps
-	@opam install --yes gen sequence core_kernel benchmark
+	@opam install --yes $(DEPS)
 
 clean:
 	rm *.{cm*,native}
