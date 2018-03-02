@@ -550,12 +550,22 @@ let f_core () =
   |> concat_map ~f:(fun x -> range ~start:`inclusive ~stop:`inclusive x (x+30))
   |> fold ~f:(+) ~init:0
 
+(* Base library *)
+let f_base () =
+  let open Base.Sequence in
+  range ~start:`inclusive ~stop:`inclusive 1 100_000
+  |> map ~f:(fun x -> x+1)
+  |> filter ~f:(fun x -> x mod 2 = 0)
+  |> concat_map ~f:(fun x -> range ~start:`inclusive ~stop:`inclusive x (x+30))
+  |> fold ~f:(+) ~init:0
+
 let () =
   assert (f_gen_noptim () = f_gen());
   assert (f_g () = f_gen());
   assert (f_g_exn () = f_gen());
   assert (f_seq () = f_gen());
   assert (f_core () = f_gen());
+  assert (f_base () = f_gen());
   assert (f_fold () = f_gen());
   assert (f_uncons () = f_gen());
   ()
@@ -568,6 +578,7 @@ let () =
     ; "g", Sys.opaque_identity f_g, ()
     ; "g_exn", Sys.opaque_identity f_g_exn, ()
     ; "core.sequence", Sys.opaque_identity f_core, ()
+    ; "base.sequence", Sys.opaque_identity f_base, ()
     ; "cps", Sys.opaque_identity f_cps, ()
     ; "cps2", Sys.opaque_identity f_cps2, ()
     ; "fold", Sys.opaque_identity f_fold, ()
@@ -580,4 +591,4 @@ let () =
   in
   Benchmark.tabulate res
 
-(* ocamlfind opt -O3 -package gen -package sequence -package benchmark -linkpkg -unbox-closures -inline-call-cost 200 truc.ml -o truc *)
+(* ocamlfind opt -O3 -unbox-closures -unbox-closures-factor 20 -package sequence -package gen -package core_kernel -package base -package benchmark -package containers -linkpkg bench.ml -o bench.native *)

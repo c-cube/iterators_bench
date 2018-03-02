@@ -1,5 +1,5 @@
 
-DEPS = sequence gen core_kernel benchmark containers
+DEPS = sequence gen core_kernel base benchmark containers
 
 OPTS = -O3 -unbox-closures -unbox-closures-factor 20
 
@@ -13,7 +13,7 @@ deps:
 	@opam install --yes $(DEPS)
 
 clean:
-	rm *.{cm*,native}
+	rm *.{cm*,o,native}
 
 run: build
 	./bench.native

@@ -3,6 +3,7 @@ B _build/
 PKG gen
 PKG sequence
 PKG core_kernel
+PKG base
 PKG benchmark
 PKG containers
 FLG -w +a-4-44
