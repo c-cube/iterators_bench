@@ -443,6 +443,90 @@ module UnCons = struct
     aux f acc state
 end
 
+module Co = struct
+  type 'a kont =
+    | K_nil
+    | K_return of 'a * 'a kont
+    | K_tailcall of 'a t * 'a kont
+    | K_map : {
+        f: 'a -> 'b;
+        from: 'a kont; (* used to generate new ['a] *)
+        k: 'b kont;
+      } -> 'b kont
+    | K_bind : {
+        f: 'a -> 'b t;
+        from: 'a kont; (* used to generate new ['a] *)
+        k: 'b kont;
+      } -> 'b kont
+    | K_list of {
+        l: 'a list;
+        k: 'a kont;
+      }
+
+  (* yield some ['a] by adding them to the continuation stack *)
+  and 'a t = 'a kont -> 'a kont
+
+  let[@inline] nil k = k
+
+  let[@inline] append (x:'a t) (y:'a t) : 'a t =
+    fun k-> x (y k)
+
+  let[@inline] return (x:'a) : 'a t = fun k -> K_return (x, k)
+
+  let[@inline] yield (x:'a) (co:'a t) : 'a t = fun k -> K_return (x, co k)
+
+  let[@inline] flat_map (f: 'a -> 'b t) (x:'a t) : 'b t =
+    fun k -> K_bind {f; from=x K_nil; k}
+
+  let[@inline] map (f: 'a -> 'b) (x:'a t) : 'b t =
+    function
+      | K_map r -> K_map {r with f=(fun x -> f (r.f x))} (* compose *)
+      | k -> K_map {f;from=x K_nil;k}
+
+  let[@inline] filter (f:'a -> bool) (x:'a t) : 'a t =
+    flat_map (fun x -> if f x then return x else nil) x
+
+  let[@inline] of_list  l : _ t = fun k -> K_list {l;k}
+
+  let (--) i j : int t =
+    let rec aux r k =
+      if r > j then k
+      else yield r (aux (r+1)) k
+    in aux i
+
+  (* generator *)
+  let rec next_k
+    : type a. a kont -> a kont * a option
+    = fun k -> match k with
+      | K_nil -> K_nil, None
+      | K_tailcall (co,k) -> next_k (co k)
+      | K_return (x, k') -> k', Some x
+      | K_map ({f; from; _} as r) ->
+        begin match next_k from with
+          | _, None -> next_k r.k
+          | from', Some x -> K_map {r with from=from'}, Some (f x)
+        end
+      | K_bind ({f; from; _} as r) ->
+        begin match next_k from with
+          | _, None -> next_k r.k
+          | from', Some x ->
+            next_k (f x @@ K_bind {r with from=from'})
+        end
+      | K_list r ->
+        begin match r.l with
+          | [] -> next_k r.k
+          | x :: tl -> K_list {r with l=tl}, Some x
+        end
+
+  let fold f acc (l:_ t) =
+    let rec aux f acc (k:_ kont) =
+      match next_k k with
+        | _, None -> acc
+        | k', Some x -> aux f (f acc x) k'
+    in
+    aux f acc (l K_nil)
+end
+
 (* the "gen" library *)
 let f_gen () =
   let open Gen in
@@ -541,6 +625,14 @@ let f_uncons () =
   |> flat_map (fun x -> x -- (x+30))
   |> fold (+) 0
 
+let f_co () =
+  let open Co in
+  1 -- 100_000
+  |> map (fun x -> x+1)
+  |> filter (fun x -> x mod 2 = 0)
+  |> flat_map (fun x -> x -- (x+30))
+  |> fold (+) 0
+
 (* Core library *)
 let f_core () =
   let open Core_kernel.Sequence in
@@ -568,6 +660,7 @@ let () =
   assert (f_base () = f_gen());
   assert (f_fold () = f_gen());
   assert (f_uncons () = f_gen());
+  assert (f_co () = f_gen());
   ()
 
 let () =
@@ -587,6 +680,7 @@ let () =
     ; "lazy_list", Sys.opaque_identity f_llist, ()
     ; "ulist", Sys.opaque_identity f_ulist, ()
     ; "uncons", Sys.opaque_identity f_uncons, ()
+    ; "coroutine", Sys.opaque_identity f_co, ()
     ]
   in
   Benchmark.tabulate res
