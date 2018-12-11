@@ -1,4 +1,3 @@
-
 module G = struct
   type 'a t = unit -> 'a option
 
@@ -30,8 +29,8 @@ module G = struct
       | Stop -> None
       | Cur g' ->
         match g'() with
-          | None -> next_gen(); aux ()
-          | Some _ as res -> res
+        | None -> next_gen(); aux ()
+        | Some _ as res -> res
     and next_gen() = match g() with
       | None -> state := Stop
       | Some x -> state := Cur (f x)
@@ -77,8 +76,8 @@ module G_exn = struct
       | Stop -> raise End
       | Cur g' ->
         match g'() with
-          | x -> x
-          | exception End -> next_gen(); aux ()
+        | x -> x
+        | exception End -> next_gen(); aux ()
     and next_gen() = match g() with
       | x -> state := Cur (f x)
       | exception e -> state := Stop; raise e
@@ -93,7 +92,7 @@ end
 module CPS = struct
   type (+'a, 'state) unfold = {
     unfold: 'r.
-      'state ->
+              'state ->
       on_done:(unit -> 'r) ->
       on_skip:('state -> 'r) ->
       on_yield:('state -> 'a -> 'r) ->
@@ -105,18 +104,18 @@ module CPS = struct
   let empty = CPS ((), {unfold=(fun () ~on_done ~on_skip:_ ~on_yield:_ -> on_done ())})
 
   let return x = CPS ((), {
-    unfold=(fun () ~on_done:_ ~on_skip:_ ~on_yield -> on_yield () x)
-  })
+      unfold=(fun () ~on_done:_ ~on_skip:_ ~on_yield -> on_yield () x)
+    })
 
   let map f (CPS (st, u)) = CPS (st, {
-    unfold=(fun st ~on_done ~on_skip ~on_yield ->
-      u.unfold
-        st
-        ~on_done
-        ~on_skip
-        ~on_yield:(fun st x -> on_yield st (f x))
-    );
-  })
+      unfold=(fun st ~on_done ~on_skip ~on_yield ->
+          u.unfold
+            st
+            ~on_done
+            ~on_skip
+            ~on_yield:(fun st x -> on_yield st (f x))
+        );
+    })
 
   let fold f acc (CPS (st,u)) =
     let rec loop st acc =
@@ -131,49 +130,49 @@ module CPS = struct
   let to_list_rev iter = fold (fun acc x -> x::acc) [] iter
 
   let of_list l = CPS (l, {
-    unfold=(fun l ~on_done ~on_skip:_ ~on_yield -> match l with
-      | [] -> on_done ()
-      | x :: tail -> on_yield tail x
-    );
-  })
+      unfold=(fun l ~on_done ~on_skip:_ ~on_yield -> match l with
+          | [] -> on_done ()
+          | x :: tail -> on_yield tail x
+        );
+    })
 
   let (--) i j = CPS (i, {
-    unfold=(fun i ~on_done ~on_skip:_ ~on_yield ->
-      if i>j then on_done ()
-      else on_yield (i+1) i
-    );
-  })
+      unfold=(fun i ~on_done ~on_skip:_ ~on_yield ->
+          if i>j then on_done ()
+          else on_yield (i+1) i
+        );
+    })
 
   let filter f (CPS (st, u1)) =
     CPS (st, {
-      unfold=(fun st ~on_done ~on_skip ~on_yield ->
-        u1.unfold st ~on_done ~on_skip
-          ~on_yield:(fun st' x ->
-            if f x then on_yield st' x
-            else on_skip st'
-          )
-      );
-    })
+        unfold=(fun st ~on_done ~on_skip ~on_yield ->
+            u1.unfold st ~on_done ~on_skip
+              ~on_yield:(fun st' x ->
+                  if f x then on_yield st' x
+                  else on_skip st'
+                )
+          );
+      })
 
   let flat_map : type a b. (a -> b t) -> a t -> b t
-  = fun f (CPS (st1, u1)) ->
-    (* obtain next element of u1 *)
-    let u = {
-      unfold=(fun (st1, CPS (sub_st2, sub2))
-          ~on_done ~on_skip ~on_yield ->
-        let done_ () =
-          u1.unfold st1
-            ~on_done
-            ~on_skip:(fun st1' -> on_skip (st1', empty))
-            ~on_yield:(fun st1' x1 -> on_skip (st1', f x1))
-        in
-        let skip sub_st2 = on_skip (st1, CPS (sub_st2, sub2)) in
-        let yield_ sub_st2 x2 = on_yield (st1, CPS (sub_st2,sub2)) x2 in
-        sub2.unfold sub_st2 ~on_done:done_ ~on_skip:skip ~on_yield:yield_
-      );
-    }
-    in
-    CPS ((st1, empty), u)
+    = fun f (CPS (st1, u1)) ->
+      (* obtain next element of u1 *)
+      let u = {
+        unfold=(fun (st1, CPS (sub_st2, sub2))
+                 ~on_done ~on_skip ~on_yield ->
+                 let done_ () =
+                   u1.unfold st1
+                     ~on_done
+                     ~on_skip:(fun st1' -> on_skip (st1', empty))
+                     ~on_yield:(fun st1' x1 -> on_skip (st1', f x1))
+                 in
+                 let skip sub_st2 = on_skip (st1, CPS (sub_st2, sub2)) in
+                 let yield_ sub_st2 x2 = on_yield (st1, CPS (sub_st2,sub2)) x2 in
+                 sub2.unfold sub_st2 ~on_done:done_ ~on_skip:skip ~on_yield:yield_
+               );
+      }
+      in
+      CPS ((st1, empty), u)
 end
 
 module CPS2 = struct
@@ -198,12 +197,12 @@ module CPS2 = struct
   let map f (CPS { state = st; unfold = u }) =
     CPS { state = st;
           unfold=(fun st ~on_done ~on_skip ~on_yield ->
-            u
-              st
-              ~on_done
-              ~on_skip
-              ~on_yield:(fun st x -> on_yield st (f x))
-          );
+              u
+                st
+                ~on_done
+                ~on_skip
+                ~on_yield:(fun st x -> on_yield st (f x))
+            );
         }
 
   let fold f acc (CPS { state = st; unfold = u }) =
@@ -220,27 +219,27 @@ module CPS2 = struct
 
   let of_list l = CPS { state = l;
                         unfold=(fun l ~on_done ~on_skip:_ ~on_yield -> match l with
-                          | [] -> on_done ()
-                          | x :: tail -> on_yield tail x
-                        );
+                            | [] -> on_done ()
+                            | x :: tail -> on_yield tail x
+                          );
                       }
 
   let (--) i j = CPS { state = i;
                        unfold=(fun i ~on_done ~on_skip:_ ~on_yield ->
-                         if i>j then on_done ()
-                         else on_yield (i+1) i
-                       );
+                           if i>j then on_done ()
+                           else on_yield (i+1) i
+                         );
                      }
 
   let filter f (CPS { state = st; unfold = u1 }) =
     CPS { state = st;
           unfold=(fun st ~on_done ~on_skip ~on_yield ->
-            u1 st ~on_done ~on_skip
-              ~on_yield:(fun st' x ->
-                if f x then on_yield st' x
-                else on_skip st'
-              )
-          );
+              u1 st ~on_done ~on_skip
+                ~on_yield:(fun st' x ->
+                    if f x then on_yield st' x
+                    else on_skip st'
+                  )
+            );
         }
 
   let flat_map : type a b. (a -> b t) -> a t -> b t
@@ -288,8 +287,8 @@ module Fold = struct
       fold1 s1
         ~init
         ~f:(fun acc x1 ->
-          let (Fold{fold=fold2;s=s2}) = m x1 in
-          fold2 s2 ~init:acc ~f)
+            let (Fold{fold=fold2;s=s2}) = m x1 in
+            fold2 s2 ~init:acc ~f)
     in
     Fold {fold; s=s1}
 
@@ -313,9 +312,9 @@ module LList = struct
 
   let rec map f l =
     lazy (match l with
-      | lazy Nil -> Nil
-      | lazy (Cons (x,tail)) -> Cons (f x, map f tail)
-    )
+        | lazy Nil -> Nil
+        | lazy (Cons (x,tail)) -> Cons (f x, map f tail)
+      )
 
   let filter f l =
     let rec aux f l = match l with
@@ -328,17 +327,17 @@ module LList = struct
   let rec append a b =
     lazy (
       match a with
-        | lazy Nil -> Lazy.force b
-        | lazy (Cons (x,tl)) -> Cons (x, append tl b)
+      | lazy Nil -> Lazy.force b
+      | lazy (Cons (x,tl)) -> Cons (x, append tl b)
     )
 
   let rec flat_map f l =
     lazy (
       match l with
-        | lazy Nil -> Nil
-        | lazy (Cons (x,tl)) ->
-          let res = append (f x) (flat_map f tl) in
-          Lazy.force res
+      | lazy Nil -> Nil
+      | lazy (Cons (x,tl)) ->
+        let res = append (f x) (flat_map f tl) in
+        Lazy.force res
     )
 
   let rec fold f acc = function
@@ -356,8 +355,8 @@ module UList = struct
 
   let rec map f l () =
     match l () with
-      | Nil -> Nil
-      | Cons (x,tail) -> Cons (f x, map f tail)
+    | Nil -> Nil
+    | Cons (x,tail) -> Cons (f x, map f tail)
 
   let filter f l =
     let rec aux f l () = match l () with
@@ -369,15 +368,15 @@ module UList = struct
 
   let rec append a b () =
     match a () with
-      | Nil -> b ()
-      | Cons (x,tl) -> Cons (x, append tl b)
+    | Nil -> b ()
+    | Cons (x,tl) -> Cons (x, append tl b)
 
   let rec flat_map f l () =
     match l() with
-      | Nil -> Nil
-      | Cons (x,tl) ->
-        let res = append (f x) (flat_map f tl) in
-        res ()
+    | Nil -> Nil
+    | Cons (x,tl) ->
+      let res = append (f x) (flat_map f tl) in
+      res ()
 
   let rec fold f acc l = match l() with
     | Nil -> acc
@@ -409,24 +408,24 @@ module UnCons = struct
     T {state; next=next'}
 
   type ('a, 'b, 'top_st) flat_map_state =
-    FMS :
-      { top: 'top_st;
-        sub: 'sub_st;
-        sub_next: 'sub_st -> ('b * 'sub_st) option
-      } -> ('a, 'b, 'top_st) flat_map_state
+      FMS :
+        { top: 'top_st;
+          sub: 'sub_st;
+          sub_next: 'sub_st -> ('b * 'sub_st) option
+        } -> ('a, 'b, 'top_st) flat_map_state
 
   let flat_map f (T {state; next}) =
     let rec next' (FMS { top; sub; sub_next}) =
       match sub_next sub with
-        | None ->
-          begin match next top with
-            | None -> None
-            | Some (x, top') ->
-              let T{next=sub_next; state=sub} = f x in
-              next' (FMS { top=top'; sub; sub_next; })
-          end
-        | Some (x, sub') ->
-          Some (x, FMS {top; sub=sub'; sub_next})
+      | None ->
+        begin match next top with
+          | None -> None
+          | Some (x, top') ->
+            let T{next=sub_next; state=sub} = f x in
+            next' (FMS { top=top'; sub; sub_next; })
+        end
+      | Some (x, sub') ->
+        Some (x, FMS {top; sub=sub'; sub_next})
     in
     T {
       state=FMS {top=state; sub=(); sub_next=(fun _ -> None) };
@@ -480,8 +479,8 @@ module Co = struct
 
   let[@inline] map (f: 'a -> 'b) (x:'a t) : 'b t =
     function
-      | K_map r -> K_map {r with f=(fun x -> f (r.f x))} (* compose *)
-      | k -> K_map {f;from=x K_nil;k}
+    | K_map r -> K_map {r with f=(fun x -> f (r.f x))} (* compose *)
+    | k -> K_map {f;from=x K_nil;k}
 
   let[@inline] filter (f:'a -> bool) (x:'a t) : 'a t =
     flat_map (fun x -> if f x then return x else nil) x
@@ -521,11 +520,62 @@ module Co = struct
   let fold f acc (l:_ t) =
     let rec aux f acc (k:_ kont) =
       match next_k k with
-        | _, None -> acc
-        | k', Some x -> aux f (f acc x) k'
+      | _, None -> acc
+      | k', Some x -> aux f (f acc x) k'
     in
     aux f acc (l K_nil)
 end
+
+(* the "Stdlib_Seq" library *)
+let f_std_seq () =
+  let open Seq in 
+
+  let init n f =
+    let rec aux i () =
+      if i = n then
+        Nil
+      else
+        Cons(f i, aux (i + 1))
+    in
+    if n < 0 then
+      invalid_arg "Stdlib_Seq.init"
+    else
+      aux 0
+
+  in
+  
+  let ( -- ) a b =
+    if b < a then
+      empty
+    else
+      init (b - a + 1) (fun x -> a + x)
+
+  in
+  1 -- 100_000
+  |> map (fun x -> x+1)
+  |> filter (fun x -> x mod 2 = 0)
+  |> flat_map (fun x -> x -- (x+30))
+  |> fold_left (+) 0
+
+(* the "BatSeq" library *)
+let f_batseq () =
+  let open BatSeq in
+  let rec flat_map f seq () = match seq () with
+    | Nil -> Nil
+    | Cons (x, next) ->
+      flat_map_app f (f x) next ()
+
+  (* this is [append seq (flat_map f tail)] *)
+  and flat_map_app f seq tail () = match seq () with
+    | Nil -> flat_map f tail ()
+    | Cons (x, next) ->
+      Cons (x, flat_map_app f next tail)
+  in 
+  1 -- 100_000
+  |> map (fun x -> x+1)
+  |> filter (fun x -> x mod 2 = 0)
+  |> flat_map (fun x -> x -- (x+30))
+  |> fold_left (+) 0
 
 (* the "gen" library *)
 let f_gen () =
@@ -661,28 +711,31 @@ let () =
   assert (f_fold () = f_gen());
   assert (f_uncons () = f_gen());
   assert (f_co () = f_gen());
+  assert (f_std_seq () = f_gen());
   ()
 
 let () =
   let res =
     (Sys.opaque_identity Benchmark.throughputN) ~repeat:2 3
-    [ "gen", Sys.opaque_identity f_gen, ()
-    ; "gen_no_optim", Sys.opaque_identity f_gen_noptim, ()
-    ; "g", Sys.opaque_identity f_g, ()
-    ; "g_exn", Sys.opaque_identity f_g_exn, ()
-    ; "core.sequence", Sys.opaque_identity f_core, ()
-    ; "base.sequence", Sys.opaque_identity f_base, ()
-    ; "cps", Sys.opaque_identity f_cps, ()
-    ; "cps2", Sys.opaque_identity f_cps2, ()
-    ; "fold", Sys.opaque_identity f_fold, ()
-    ; "sequence", Sys.opaque_identity f_seq, ()
-    ; "list", Sys.opaque_identity f_list, ()
-    ; "lazy_list", Sys.opaque_identity f_llist, ()
-    ; "ulist", Sys.opaque_identity f_ulist, ()
-    ; "uncons", Sys.opaque_identity f_uncons, ()
-    ; "coroutine", Sys.opaque_identity f_co, ()
-    ]
+      [ "gen", Sys.opaque_identity f_gen, ()
+      ; "gen_no_optim", Sys.opaque_identity f_gen_noptim, ()
+      ; "g", Sys.opaque_identity f_g, ()
+      ; "g_exn", Sys.opaque_identity f_g_exn, ()
+      ; "core.sequence", Sys.opaque_identity f_core, ()
+      ; "base.sequence", Sys.opaque_identity f_base, ()
+      ; "cps", Sys.opaque_identity f_cps, ()
+      ; "cps2", Sys.opaque_identity f_cps2, ()
+      ; "fold", Sys.opaque_identity f_fold, ()
+      ; "sequence", Sys.opaque_identity f_seq, ()
+      ; "list", Sys.opaque_identity f_list, ()
+      ; "lazy_list", Sys.opaque_identity f_llist, ()
+      ; "ulist", Sys.opaque_identity f_ulist, ()
+      ; "uncons", Sys.opaque_identity f_uncons, ()
+      ; "coroutine", Sys.opaque_identity f_co, ()
+      ; "batseq", Sys.opaque_identity f_batseq, ()
+      ; "std_seq", Sys.opaque_identity f_std_seq, ()
+      ]
   in
   Benchmark.tabulate res
 
-(* ocamlfind opt -O3 -unbox-closures -unbox-closures-factor 20 -package sequence -package gen -package core_kernel -package base -package benchmark -package containers -linkpkg bench.ml -o bench.native *)
+(* ocamlfind opt -O3 -unbox-closures -unbox-closures-factor 20 -package sequence -package gen -package core_kernel -package base -package batteries -package benchmark -package containers -linkpkg bench.ml -o bench.native *)

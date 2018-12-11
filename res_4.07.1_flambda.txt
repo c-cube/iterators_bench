@@ -1,0 +1,59 @@
+$ make run
+
+ocamlfind opt -O3 -unbox-closures -unbox-closures-factor 20 -package sequence -package gen -package core_kernel -package base -package batteries -package benchmark -package containers -linkpkg bench.ml -o bench.native
+./bench.native
+Throughputs for "gen", "gen_no_optim", "g", "g_exn", "core.sequence", "base.sequence", "cps", "cps2", "fold", "sequence", "list", "lazy_list", "ulist", "uncons", "coroutine", "batseq", "std_seq" each running 2 times for at least 3 CPU seconds:
+
+          gen:  3.41 WALL ( 3.41 usr +  0.00 sys =  3.41 CPU) @ 44.55/s (n=152)
+                3.37 WALL ( 3.37 usr +  0.00 sys =  3.37 CPU) @ 45.08/s (n=152)
+ gen_no_optim:  3.59 WALL ( 3.59 usr +  0.00 sys =  3.59 CPU) @ 40.37/s (n=145)
+                3.68 WALL ( 3.68 usr +  0.00 sys =  3.68 CPU) @ 39.43/s (n=145)
+            g:  3.12 WALL ( 3.12 usr +  0.00 sys =  3.12 CPU) @ 89.72/s (n=280)
+                3.07 WALL ( 3.07 usr +  0.00 sys =  3.07 CPU) @ 91.07/s (n=280)
+        g_exn:  3.17 WALL ( 3.15 usr +  0.00 sys =  3.15 CPU) @ 38.37/s (n=121)
+                3.13 WALL ( 3.12 usr +  0.00 sys =  3.12 CPU) @ 38.74/s (n=121)
+core.sequence:  3.23 WALL ( 3.22 usr +  0.00 sys =  3.22 CPU) @ 55.20/s (n=178)
+                3.29 WALL ( 3.24 usr +  0.02 sys =  3.26 CPU) @ 54.65/s (n=178)
+base.sequence:  3.14 WALL ( 3.09 usr +  0.01 sys =  3.10 CPU) @ 55.49/s (n=172)
+                3.00 WALL ( 3.00 usr +  0.00 sys =  3.00 CPU) @ 57.29/s (n=172)
+          cps:  3.64 WALL ( 3.62 usr +  0.00 sys =  3.63 CPU) @ 20.95/s (n=76)
+                3.63 WALL ( 3.62 usr +  0.00 sys =  3.62 CPU) @ 20.99/s (n=76)
+         cps2:  3.53 WALL ( 3.53 usr +  0.00 sys =  3.53 CPU) @ 20.70/s (n=73)
+                3.50 WALL ( 3.50 usr +  0.00 sys =  3.50 CPU) @ 20.85/s (n=73)
+         fold:  3.14 WALL ( 3.14 usr +  0.00 sys =  3.14 CPU) @ 151.52/s (n=476)
+                3.13 WALL ( 3.13 usr +  0.00 sys =  3.13 CPU) @ 151.90/s (n=476)
+     sequence:  3.25 WALL ( 3.25 usr +  0.00 sys =  3.25 CPU) @ 251.70/s (n=819)
+                3.32 WALL ( 3.32 usr +  0.00 sys =  3.32 CPU) @ 246.74/s (n=819)
+         list:  3.19 WALL ( 3.15 usr +  0.04 sys =  3.19 CPU) @  5.01/s (n=16)
+                3.12 WALL ( 3.09 usr +  0.03 sys =  3.12 CPU) @  5.13/s (n=16)
+    lazy_list:  3.04 WALL ( 3.04 usr +  0.00 sys =  3.04 CPU) @  5.59/s (n=17)
+                3.02 WALL ( 3.02 usr +  0.00 sys =  3.02 CPU) @  5.63/s (n=17)
+        ulist:  3.14 WALL ( 3.14 usr +  0.00 sys =  3.14 CPU) @ 50.98/s (n=160)
+                3.14 WALL ( 3.14 usr +  0.00 sys =  3.14 CPU) @ 50.87/s (n=160)
+       uncons:  3.15 WALL ( 3.15 usr +  0.00 sys =  3.15 CPU) @ 52.00/s (n=164)
+                3.12 WALL ( 3.12 usr +  0.00 sys =  3.12 CPU) @ 52.60/s (n=164)
+    coroutine:  3.07 WALL ( 3.07 usr +  0.00 sys =  3.07 CPU) @ 49.57/s (n=152)
+                3.09 WALL ( 3.08 usr +  0.00 sys =  3.08 CPU) @ 49.29/s (n=152)
+       batseq:  3.14 WALL ( 3.13 usr +  0.00 sys =  3.13 CPU) @ 39.60/s (n=124)
+                3.12 WALL ( 3.12 usr +  0.00 sys =  3.12 CPU) @ 39.71/s (n=124)
+      std_seq:  3.15 WALL ( 3.15 usr +  0.00 sys =  3.15 CPU) @ 42.25/s (n=133)
+                3.15 WALL ( 3.15 usr +  0.00 sys =  3.15 CPU) @ 42.26/s (n=133)
+		
+                Rate        list lazy_list  cps2   cps g_exn batseq gen_no_optim std_seq  gen coroutine ulist uncons core.sequence base.sequence    g fold sequence
+         list 5.07+-0.06/s    --      -10%  -76%  -76%  -87%   -87%         -87%    -88% -89%      -90%  -90%   -90%          -91%          -91% -94% -97%     -98%
+    lazy_list 5.61+-0.02/s   11%        --  -73%  -73%  -85%   -86%         -86%    -87% -87%      -89%  -89%   -89%          -90%          -90% -94% -96%     -98%
+         cps2 20.8+- 0.1/s  310%      270%    -- [-1%]  -46%   -48%         -48%    -51% -54%      -58%  -59%   -60%          -62%          -63% -77% -86%     -92%
+          cps 21.0+- 0.0/s  314%      274%  [1%]    --  -46%   -47%         -47%    -50% -53%      -58%  -59%   -60%          -62%          -63% -77% -86%     -92%
+        g_exn 38.6+- 0.2/s  661%      587%   86%   84%    --    -3%        [-3%]     -9% -14%      -22%  -24%   -26%          -30%          -32% -57% -75%     -85%
+       batseq 39.7+- 0.1/s  683%      607%   91%   89%    3%     --        [-1%]     -6% -12%      -20%  -22%   -24%          -28%          -30% -56% -74%     -84%
+ gen_no_optim 39.9+- 0.4/s  687%      611%   92%   90%  [3%]   [1%]           --     -6% -11%      -19%  -22%   -24%          -27%          -29% -56% -74%     -84%
+      std_seq 42.3+- 0.0/s  734%      653%  103%  101%   10%     7%           6%      --  -6%      -15%  -17%   -19%          -23%          -25% -53% -72%     -83%
+          gen 44.8+- 0.2/s  784%      699%  116%  114%   16%    13%          12%      6%   --       -9%  -12%   -14%          -18%          -21% -50% -70%     -82%
+    coroutine 49.4+- 0.1/s  875%      781%  138%  136%   28%    25%          24%     17%  10%        --   -3%    -5%          -10%          -12% -45% -67%     -80%
+        ulist 50.9+- 0.0/s  905%      808%  145%  143%   32%    28%          28%     21%  14%        3%    --    -3%           -7%          -10% -44% -66%     -80%
+       uncons 52.3+- 0.3/s  932%      832%  152%  149%   36%    32%          31%     24%  17%        6%    3%     --           -5%           -7% -42% -66%     -79%
+core.sequence 54.9+- 0.3/s  984%      879%  164%  162%   42%    38%          38%     30%  23%       11%    8%     5%            --         [-3%] -39% -64%     -78%
+base.sequence 56.4+- 0.9/s 1013%      905%  171%  169%   46%    42%          41%     33%  26%       14%   11%     8%          [3%]            -- -38% -63%     -77%
+            g 90.4+- 0.6/s 1684%     1512%  335%  331%  134%   128%         127%    114% 102%       83%   78%    73%           65%           60%   -- -40%     -64%
+         fold  152+-   0/s 2894%     2605%  630%  624%  294%   283%         280%    259% 239%      207%  198%   190%          176%          169%  68%   --     -39%
+     sequence  249+-   2/s 4818%     4343% 1099% 1089%  546%   528%         525%    490% 456%      404%  389%   377%          354%          342% 176%  64%       --
