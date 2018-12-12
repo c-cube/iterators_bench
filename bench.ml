@@ -57,8 +57,8 @@ module G_exn = struct
 
   let map f g =
     fun () ->
-      let x = g() in
-      f x
+    let x = g() in
+    f x
 
   let rec filter f g () =
     let x = g() in
@@ -530,25 +530,10 @@ end
 let f_std_seq () =
   let open Seq in 
 
-  let init n f =
-    let rec aux i () =
-      if i = n then
-        Nil
-      else
-        Cons(f i, aux (i + 1))
-    in
-    if n < 0 then
-      invalid_arg "Stdlib_Seq.init"
-    else
-      aux 0
-
-  in
-  
-  let ( -- ) a b =
-    if b < a then
-      empty
-    else
-      init (b - a + 1) (fun x -> a + x)
+  let rec (--) i j () =
+    if i = j then Cons (i, empty)
+    else if i < j then Cons (i, i + 1 -- j)
+    else Cons (i, i - 1 -- j)
 
   in
   1 -- 100_000
@@ -556,6 +541,16 @@ let f_std_seq () =
   |> filter (fun x -> x mod 2 = 0)
   |> flat_map (fun x -> x -- (x+30))
   |> fold_left (+) 0
+
+(* the "OSeq" library *)
+let f_oseq () =
+  let open OSeq in 
+
+  1 -- 100_000
+  |> map (fun x -> x+1)
+  |> filter (fun x -> x mod 2 = 0)
+  |> flat_map (fun x -> x -- (x+30))
+  |> fold (+) 0
 
 (* the "BatSeq" library *)
 let f_batseq () =
@@ -712,6 +707,7 @@ let () =
   assert (f_uncons () = f_gen());
   assert (f_co () = f_gen());
   assert (f_std_seq () = f_gen());
+  assert (f_oseq () = f_gen());
   ()
 
 let () =
@@ -734,8 +730,10 @@ let () =
       ; "coroutine", Sys.opaque_identity f_co, ()
       ; "batseq", Sys.opaque_identity f_batseq, ()
       ; "std_seq", Sys.opaque_identity f_std_seq, ()
+      ; "oseq", Sys.opaque_identity f_oseq, ()
       ]
   in
   Benchmark.tabulate res
 
-(* ocamlfind opt -O3 -unbox-closures -unbox-closures-factor 20 -package sequence -package gen -package core_kernel -package base -package batteries -package benchmark -package containers -linkpkg bench.ml -o bench.native *)
+(* ocamlfind opt -O3 -unbox-closures -unbox-closures-factor 20 -package sequence -package gen -package core_kernel -package base -package batteries -package benchmark -package containers -package oseq
+   -linkpkg bench.ml -o bench.native *)

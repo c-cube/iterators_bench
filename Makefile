@@ -1,5 +1,4 @@
-
-DEPS = sequence gen core_kernel base batteries benchmark containers
+DEPS = sequence gen core_kernel base batteries benchmark containers oseq
 
 OPTS = -O3 -unbox-closures -unbox-closures-factor 20
 
