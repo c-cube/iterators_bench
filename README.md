@@ -17,7 +17,7 @@ Benchmark several implementations of iterators, for OCaml 4.03/4.06.0/4.06.1 + f
 - `uncons`: local
 
 - `std_seq`: module Seq (since OCaml 4.07)
-- `sequence`: the library on opam
+- `iter`: the library on opam
 - `batseq`: batteries on opam
 - `oseq`: oseq on opam
 - `core.sequence`: core on opam

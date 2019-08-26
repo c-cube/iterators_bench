@@ -2,7 +2,7 @@ S .
 B _build/
 
 PKG gen
-PKG sequence
+PKG iter
 PKG core_kernel
 PKG base
 PKG benchmark

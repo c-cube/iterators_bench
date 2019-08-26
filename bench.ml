@@ -528,7 +528,7 @@ end
 
 (* the "Stdlib_Seq" library *)
 let f_std_seq () =
-  let open Seq in 
+  let open Seq in
 
   let rec (--) i j () =
     if i = j then Cons (i, empty)
@@ -544,7 +544,7 @@ let f_std_seq () =
 
 (* the "OSeq" library *)
 let f_oseq () =
-  let open OSeq in 
+  let open OSeq in
 
   1 -- 100_000
   |> map (fun x -> x+1)
@@ -565,7 +565,7 @@ let f_batseq () =
     | Nil -> flat_map f tail ()
     | Cons (x, next) ->
       Cons (x, flat_map_app f next tail)
-  in 
+  in
   1 -- 100_000
   |> map (fun x -> x+1)
   |> filter (fun x -> x mod 2 = 0)
@@ -605,9 +605,9 @@ let f_g_exn () =
   |> flat_map (fun x -> x -- (x+30))
   |> fold (+) 0
 
-(* sequence library *)
-let f_seq () =
-  let open Sequence in
+(* iter library *)
+let f_iter () =
+  let open Iter in
   1 -- 100_000
   |> map (fun x -> x+1)
   |> filter (fun x -> x mod 2 = 0)
@@ -700,7 +700,7 @@ let () =
   assert (f_gen_noptim () = f_gen());
   assert (f_g () = f_gen());
   assert (f_g_exn () = f_gen());
-  assert (f_seq () = f_gen());
+  assert (f_iter () = f_gen());
   assert (f_core () = f_gen());
   assert (f_base () = f_gen());
   assert (f_fold () = f_gen());
@@ -722,7 +722,7 @@ let () =
       ; "cps", Sys.opaque_identity f_cps, ()
       ; "cps2", Sys.opaque_identity f_cps2, ()
       ; "fold", Sys.opaque_identity f_fold, ()
-      ; "sequence", Sys.opaque_identity f_seq, ()
+      ; "iter", Sys.opaque_identity f_iter, ()
       ; "list", Sys.opaque_identity f_list, ()
       ; "lazy_list", Sys.opaque_identity f_llist, ()
       ; "ulist", Sys.opaque_identity f_ulist, ()
@@ -735,5 +735,5 @@ let () =
   in
   Benchmark.tabulate res
 
-(* ocamlfind opt -O3 -unbox-closures -unbox-closures-factor 20 -package sequence -package gen -package core_kernel -package base -package batteries -package benchmark -package containers -package oseq
+(* ocamlfind opt -O3 -unbox-closures -unbox-closures-factor 20 -package iter -package gen -package core_kernel -package base -package batteries -package benchmark -package containers -package oseq
    -linkpkg bench.ml -o bench.native *)
