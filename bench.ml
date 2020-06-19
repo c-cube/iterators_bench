@@ -526,6 +526,65 @@ module Co = struct
     aux f acc (l K_nil)
 end
 
+
+module Streaming_stream = struct
+  type ('a, 'b) reducer =
+    Reducer : {
+      init : unit -> 'acc;
+      step : 'acc -> 'a -> 'acc;
+      full : 'acc -> bool;
+      stop : 'acc -> 'b;
+    } -> ('a, 'b) reducer
+
+  type 'a t =
+    { reduce : 'r . ('a, 'r) reducer -> 'r }
+    [@@unboxed]
+
+  let reduce r self =
+    self.reduce r
+
+  let (--) n m =
+    let reduce (Reducer k) =
+      let rec loop i r =
+        if k.full r then r
+        else
+          if i > m then r
+          else loop (i + 1) (k.step r i) in
+      k.stop (loop n (k.init ())) in
+    { reduce }
+
+  let flat_map f this =
+    let reduce (Reducer k) =
+      let step r x =
+        (f x).reduce (Reducer { k with
+            init = (fun () -> r);
+            stop = (fun r -> r)
+          }) in
+      this.reduce (Reducer { k with step }) in
+    { reduce }
+
+  let fold step init =
+    reduce (Reducer {
+        init = (fun () -> init);
+        step;
+        full = (fun _ -> false);
+        stop = (fun x -> x);
+      })
+
+  let map f self =
+    let reduce (Reducer k) =
+      let step acc x = k.step acc (f x) in
+      self.reduce (Reducer { k with step }) in
+    { reduce }
+
+  let filter pred self =
+    let reduce (Reducer k) =
+      let step r x = if pred x then k.step r x else r in
+      self.reduce (Reducer { k with step }) in
+    { reduce }
+end
+
+
 (* the "Stdlib_Seq" library *)
 let f_std_seq () =
   let open Seq in
@@ -696,6 +755,16 @@ let f_base () =
   |> concat_map ~f:(fun x -> range ~start:`inclusive ~stop:`inclusive x (x+30))
   |> fold ~f:(+) ~init:0
 
+(* Streaming library *)
+let f_streaming () =
+  let open Streaming_stream in
+  1 -- 100_000
+  |> map (fun x -> x+1)
+  |> filter (fun x -> x mod 2 = 0)
+  |> flat_map (fun x -> x -- (x+30))
+  |> fold (+) 0
+
+
 let () =
   assert (f_gen_noptim () = f_gen());
   assert (f_g () = f_gen());
@@ -708,6 +777,7 @@ let () =
   assert (f_co () = f_gen());
   assert (f_std_seq () = f_gen());
   assert (f_oseq () = f_gen());
+  assert (f_streaming () = f_gen());
   ()
 
 let () =
@@ -731,6 +801,7 @@ let () =
       ; "batseq", Sys.opaque_identity f_batseq, ()
       ; "std_seq", Sys.opaque_identity f_std_seq, ()
       ; "oseq", Sys.opaque_identity f_oseq, ()
+      ; "streaming", Sys.opaque_identity f_streaming, ()
       ]
   in
   Benchmark.tabulate res
