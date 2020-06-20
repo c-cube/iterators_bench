@@ -563,12 +563,15 @@ module Streaming_stream = struct
       this.reduce (Reducer { k with step }) in
     { reduce }
 
-  let fold step init =
+  let[@inline] fold step init =
+    let[@inline] init () = init in
+    let[@inline] stop x = x in
+    let[@inline] full _ = false in
     reduce (Reducer {
-        init = (fun () -> init);
+        init;
         step;
-        full = (fun _ -> false);
-        stop = (fun x -> x);
+        full;
+        stop;
       })
 
   let map f self =
