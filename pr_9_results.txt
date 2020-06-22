@@ -1,0 +1,56 @@
+(see https://github.com/c-cube/iterators_bench/pull/9)
+
+Test with 4.10.0+flambda (WITH the flags '-unbox-closures' & '-unbox-closures-factor 20').
+
+
+ocamlfind opt -O3 -unbox-closures -unbox-closures-factor 20 -package iter -package gen -package core_kernel -package base -package batteries -package benchmark -package containers -package oseq -linkpkg bench.ml -o bench.native
+./bench.native
+Throughputs for "gen", "gen_no_optim", "g", "g_exn", "core.sequence", "base.sequence", "cps", "cps2", "fold", "iter", "list", "lazy_list", "ulist", "uncons", "coroutine", "batseq", "std_seq", "oseq", "streaming" each running 2 times for at least 3 CPU seconds:
+
+                Rate        list lazy_list  cps2   cps gen_no_optim batseq  gen coroutine std_seq oseq ulist uncons base.sequence core.sequence g_exn    g fold iter streaming
+         fold  159+-   0/s 2798%     1912%  702%  698%         283%   268% 227%      214%    209% 207%  180%   171%          168%          162%   84%  68%   -- -47%      -70%
+         iter  298+-   0/s 5344%     3681% 1407% 1399%         619%   592% 514%      489%    480% 476%  427%   409%          403%          392%  246% 216%  88%   --      -44%
+    streaming  532+-   1/s 9620%     6651% 2591% 2577%        1183%  1135% 996%      952%    936% 929%  841%   809%          799%          779%  519% 465% 235%  79%        --
+
+(-------------------------------------------------------------------------------------------------------------------------------------------------) 
+
+Test with 4.10.0+flambda (WITHOUT the flags '-unbox-closures' & '-unbox-closures-factor 20').
+
+ocamlfind opt -O3  -package iter -package gen -package core_kernel -package base -package batteries -package benchmark -package containers -package oseq -linkpkg bench.ml -o bench.native
+./bench.native
+Throughputs for "gen", "gen_no_optim", "g", "g_exn", "core.sequence", "base.sequence", "cps", "cps2", "fold", "iter", "list", "lazy_list", "ulist", "uncons", "coroutine", "batseq", "std_seq", "oseq", "streaming" each running 2 times for at least 3 CPU seconds:
+
+                Rate         list lazy_list   cps  cps2 gen_no_optim   gen coroutine std_seq  oseq batseq ulist core.sequence uncons base.sequence g_exn    g fold streaming iter
+         fold  159+-   0/s  2916%     1676%  635%  551%         286%  231%      206%    203%  202%   194%  175%          165%   163%          158%   71%  54%   --      -70% -75%
+    streaming  522+-   0/s  9832%     5750% 2319% 2045%        1172%  989%      907%    899%  895%   869%  807%          771%   765%          750%  463% 409% 229%        -- -18%
+         iter  637+-   3/s 12011%     7033% 2850% 2516%        1452% 1228%     1128%   1118% 1114%  1082% 1006%          962%   955%          937%  586% 520% 302%       22%   --
+
+(-------------------------------------------------------------------------------------------------------------------------------------------------) 
+
+Test with OCaml 4.08.1 (NO flambda - WITH the flags '-unbox-closures' & '-unbox-closures-factor 20').
+
+ocamlfind opt -O3 -unbox-closures -unbox-closures-factor 20 -package iter
+-package gen -package batteries -package benchmark -package containers -package oseq
+-linkpkg bench.ml -o bench.native
+./bench.native
+
+               Rate        list lazy_list cps2   cps gen_no_optim   gen g_exn coroutine std_seq  oseq batseq ulist uncons    g iter streaming fold
+        iter 92.3+- 0.0/s 1631%     1285% 340%  338%         167%  165%  150%      144%    101%  100%    99%   83%    56%  22%   --     [-0%] -37%
+   streaming 92.5+- 0.1/s 1635%     1288% 341%  339%         167%  166%  151%      144%    101%  101%    99%   84%    57%  23% [0%]        -- -37%
+        fold  146+-   0/s 2638%     2090% 595%  593%         322%  320%  295%      285%    218%  217%   215%  190%   147%  94%  58%       58%   --
+
+(-------------------------------------------------------------------------------------------------------------------------------------------------) 
+
+Test with OCaml 4.08.1 (NO flambda - WITHOUT the flags '-unbox-closures' & '-unbox-closures-factor 20').
+
+ocamlfind opt -O3  -package iter -package gen -package batteries -package benchmark
+-package containers -package oseq -linkpkg bench.ml -o bench.native
+./bench.native
+
+               Rate        list lazy_list cps2   cps gen_no_optim   gen g_exn coroutine std_seq batseq  oseq ulist uncons    g iter streaming fold
+        iter 92.3+- 0.1/s 1636%     1291% 339%  338%         181%  179%  162%      145%    101%    99%   96%   83%    56%  29%   --       -2% -35%
+   streaming 94.4+- 0.0/s 1675%     1322% 349%  348%         187%  185%  168%      150%    105%   104%  101%   87%    59%  31%   2%        -- -34%
+        fold  142+-   4/s 2574%     2043% 577%  575%         333%  330%  304%      277%    209%   207%  202%  182%   140%  98%  54%       51%   -- 
+
+(-------------------------------------------------------------------------------------------------------------------------------------------------) 
+
